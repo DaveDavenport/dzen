@@ -7,6 +7,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xresource.h>
+#include <X11/Xatom.h>
 #ifdef DZEN_XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
@@ -141,6 +142,7 @@ struct DZEN {
 	const char *bg;
 	const char *fg;
 	int line_height;
+    int opacity;
 
 	Display *dpy;
 	int screen;

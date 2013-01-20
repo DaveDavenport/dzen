@@ -24,6 +24,10 @@
 #define HOST_NAME_MAX 255
 #endif
 
+
+#define OPAQUE 0xffffffff
+#define OPACITY    "_NET_WM_WINDOW_OPACITY"
+
 Dzen dzen = {0};
 static int last_cnt = 0;
 typedef void sigfunc(int);
@@ -486,6 +490,8 @@ x_read_resources(void) {
 			dzen.title_win.name  = estrdup(xvalue.addr);
 		if( XrmGetResource(xdb, "dzen2.slavename", "*", datatype, &xvalue) == True )
 			dzen.slave_win.name  = estrdup(xvalue.addr);
+		if( XrmGetResource(xdb, "dzen2.opacity", "*", datatype, &xvalue) == True )
+			dzen.opacity = atoi(xvalue.addr);
 		XrmDestroyDatabase(xdb);
 	}
 }
@@ -543,6 +549,13 @@ x_create_windows(int use_ewmh_dock) {
 
 	/* set some hints for windowmanagers*/
 	set_docking_ewmh_info(dzen.dpy, dzen.title_win.win, use_ewmh_dock);
+
+
+    /* set transparency */
+    unsigned int opacity_set = (unsigned int)((dzen.opacity/100.0)* OPAQUE);
+    XChangeProperty(dzen.dpy, dzen.title_win.win, XInternAtom(dzen.dpy, OPACITY, False),
+            XA_CARDINAL, 32, PropModeReplace,
+            (unsigned char *) &opacity_set, 1L);
 
 	/* TODO: Smarter approach to window creation so we can reduce the
 	 *       size of this function.
@@ -909,6 +922,7 @@ main(int argc, char *argv[]) {
 	dzen.fnt = FONT;
 	dzen.bg  = BGCOLOR;
 	dzen.fg  = FGCOLOR;
+    dzen.opacity = 100;
 	dzen.slave_win.max_lines  = 0;
 	dzen.running = True;
 	dzen.xinescreen = 0;
@@ -1012,7 +1026,10 @@ main(int argc, char *argv[]) {
 		else if(!strncmp(argv[i], "-bg", 4)) {
 			if(++i < argc) dzen.bg = argv[i];
 		}
-		else if(!strncmp(argv[i], "-fg", 4)) {
+        else if (!strncmp(argv[i], "-o" , 3)){
+			if(++i < argc) dzen.opacity = atoi(argv[i]);
+        }
+        else if(!strncmp(argv[i], "-fg", 4)) {
 			if(++i < argc) dzen.fg = argv[i];
 		}
 		else if(!strncmp(argv[i], "-x", 3)) {
@@ -1064,7 +1081,7 @@ main(int argc, char *argv[]) {
                    "             [-x <pixel>] [-y <pixel>] [-w <pixel>] [-h <pixel>] [-tw <pixel>] [-u]\n"
 				   "             [-e <string>] [-l <lines>]  [-fn <font>] [-bg <color>] [-fg <color>]\n"
 				   "             [-geometry <geometry string>] [-expand <left|right>] [-dock]\n"
-				   "             [-title-name <string>] [-slave-name <string>]\n"
+				   "             [-title-name <string>] [-slave-name <string>] [-o <opacity>]\n"
 #ifdef DZEN_XINERAMA
 				   "             [-xs <screen>]\n"
 #endif
